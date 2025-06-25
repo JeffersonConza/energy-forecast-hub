@@ -57,9 +57,6 @@ Files:
 - **Actual vs. Predicted**: Line plots comparing model forecasts.  
 - **Residual Analysis**: Scatter plots with error magnitude gradients.  
 
-![Example Plot](https://via.placeholder.com/600x400?text=Actual+vs+Predicted+Plot)  
-*(Replace with actual plot from the project)*  
-
 ---
 
 ## 💻 Code Implementation
