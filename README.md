@@ -89,30 +89,46 @@ streamlit run dashboard.py
 
 ```
 energy-forecast-hub/
-├── data/                   # Dataset files
-├── models/                 # Trained models (.pkl.joblib)
-├── src/                    # ML source code
+│
+├── data/                   # Dataset files (Shared by Python & R)
+│   ├── df_train.csv
+│   └── df_test.csv
+│
+├── models/                 # Python Models
+│   └── production_model.pkl.joblib
+│
+├── src/                    # Python ML Source Code
 │   ├── preprocessing.py
 │   ├── training.py
 │   ├── evaluation.py
 │   └── visualization.py
-├── app.py                  # FastAPI backend
-├── dashboard.py            # Streamlit frontend
-├── main.py                 # Training script
-├── docker-compose.yml
-├── Dockerfile
-└── requirements.txt
+│
+├── R_project/              # R Implementation (New)
+│   ├── models/             # R Models (.rds)
+│   ├── R/                  # R Source Code
+│   │   └── processing.R    # Feature engineering logic
+│   ├── train_comparison.R  # Training script
+│   └── install_packages.R  # Dependency installer
+│
+├── app.py                  # FastAPI Backend (Python)
+├── dashboard.py            # Streamlit Frontend (Python)
+├── main.py                 # Training script (Python)
+├── docker-compose.yml      # Orchestration
+├── Dockerfile              # Container definition
+├── requirements.txt        # Python Dependencies
+└── README.md               # Documentation
 ```
 
 ---
 
-## 📊 Model Performance
+## 📊 Model Performance Comparison
 
-| Model | RMSE (kW) | Status |
-|-------|-----------|--------|
-| **Random Forest** | **431.93** | 🏆 Production |
-| XGBoost | 475.27 | - |
-| Linear Regression | 504.30 | Baseline |
+| Model | Python | R | Notes |
+|-------|---------------------|---------------|--------|
+| | RMSE (kW) | RMSE (kW) | |
+| **Random Forest** | **431.93** | **383.10** | 🏆 Winner |
+| XGBoost | 475.27 | 463.00 | Consistently strong |
+| Linear Regression | 504.30 | 505.00 | Baseline model |
 
 ---
 

@@ -9,6 +9,7 @@ env/
 # --- Ignore Large Models ---
 models/*.joblib
 models/*.pkl
+models/*.rds
 
 # --- IDE Settings ---
 .vscode/
