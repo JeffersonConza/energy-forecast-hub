@@ -1,0 +1,17 @@
+# --- Python Junk ---
+__pycache__/
+*.py[cod]
+
+# --- Virtual Env ---
+venv/
+env/
+
+# --- Ignore Large Models ---
+models/*.joblib
+models/*.pkl
+
+# --- IDE Settings ---
+.vscode/
+.idea/
+
+# data will be saved

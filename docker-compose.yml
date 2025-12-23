@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # Service 1: The Brain (FastAPI)
+  api:
+    build: .
+    container_name: energy_api
+    command: uvicorn app:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models  # This syncs your local 'models' folder to the container
+
+  # Service 2: The Face (Streamlit)
+  dashboard:
+    build: .
+    container_name: energy_dashboard
+    command: streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      # This tells Streamlit to look for the API at the internal hostname 'api'
+      - API_URL=http://api:8000/predict
+    depends_on:
+      - api
