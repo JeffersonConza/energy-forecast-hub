@@ -39,7 +39,6 @@ Available in **df_train.csv** and **df_test.csv**:
 - Docker
 
 **Future Implementations:**
-- R (planned)
 - Julia (planned)
 
 ---
