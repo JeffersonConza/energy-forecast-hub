@@ -7,22 +7,54 @@ library(xgboost)
 
 source("R/processing.R")
 
-# Load the saved model (The winner from step 4)
+# Load the saved model
 model <- readRDS("models/production_model_r.rds")
 
 #* @apiTitle Energy Forecast API (R Version)
-#* @apiDescription Serves the best performing model (LR, RF, or XGB)
+#* @apiDescription Serves the production Random Forest model
+
+#* CORS filter & Preflight Handler
+#* @filter cors
+function(req, res) {
+  res$setHeader("Access-Control-Allow-Origin", "*")
+  res$setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+  res$setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization")
+  
+  if (req$REQUEST_METHOD == "OPTIONS") {
+    res$status <- 200
+    return(list())
+  }
+  forward()
+}
+
+#* Logger filter
+#* @filter logger
+function(req) {
+  cat(as.character(Sys.time()), "-", req$REQUEST_METHOD, req$PATH_INFO, "\n")
+  forward()
+}
 
 #* Health Check
+#* @serializer json list(auto_unbox = TRUE)
 #* @get /
 function() {
-  list(status = "online", language = "R", message = "Ready to predict ⚡")
+  list(status = "online", language = "R")
 }
 
 #* Predict Power Consumption
-#* @param date:string Date in YYYY-MM-DD format
+#* @serializer json list(auto_unbox = TRUE)
 #* @post /predict
-function(date) {
+function(req, res, date = NULL) {
+  # If date is not in standard query/form args, check JSON body
+  if (is.null(date) && !is.null(req$body$date)) {
+    date <- req$body$date
+  }
+  
+  if (is.null(date)) {
+    res$status <- 400
+    return(list(error = "Missing date parameter"))
+  }
+  
   # Create single-row dataframe
   input_data <- tibble(date = date)
   
@@ -31,10 +63,11 @@ function(date) {
   
   # Predict
   prediction <- predict(model, new_data = processed_data)
+  pred_val <- round(as.numeric(prediction$.pred), 2)
   
   list(
     date = date,
-    predicted_consumption_kw = round(prediction$.pred, 2),
-    model_used = "Best R Model"
+    predicted_consumption_kw = pred_val,
+    model_used = "Random Forest (Production)"
   )
 }

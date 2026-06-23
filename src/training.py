@@ -3,9 +3,10 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import TimeSeriesSplit
+from sklearn.metrics import mean_squared_error
 from xgboost import XGBRegressor
-
-# Saving and loading models
+import numpy as np
 import joblib
 import os
 
@@ -21,7 +22,7 @@ def get_preprocessor():
     )
     return preprocessor
 
-def train_models(X_train, y_train, n_estimators=1000, max_depth=None, random_state=42):
+def train_models(X_train, y_train, n_estimators=1000, max_depth=None, random_state=42, verbose=True):
     """
     Trains three models with comparable parameters for fair comparison.
     
@@ -31,6 +32,7 @@ def train_models(X_train, y_train, n_estimators=1000, max_depth=None, random_sta
         n_estimators: Number of trees for RF and XGBoost (default: 1000)
         max_depth: Maximum tree depth for RF and XGBoost (default: None for RF, 6 for XGBoost)
         random_state: Random seed for reproducibility (default: 42)
+        verbose: Print progress output (default: True)
     """
     preprocessor = get_preprocessor()
 
@@ -64,11 +66,38 @@ def train_models(X_train, y_train, n_estimators=1000, max_depth=None, random_sta
 
     trained_models = {}
     for name, model in models.items():
-        print(f"Training {name}...")
+        if verbose:
+            print(f"Training {name}...")
         model.fit(X_train, y_train)
         trained_models[name] = model
         
     return trained_models
+
+def cross_validate_models(X_train, y_train, n_splits=5):
+    """
+    Performs TimeSeriesSplit cross-validation on the training set to prevent forward data leakage.
+    Returns the mean validation RMSE for each model.
+    """
+    tscv = TimeSeriesSplit(n_splits=n_splits)
+    model_names = ["Linear Regression", "Random Forest", "XGBoost"]
+    cv_scores = {name: [] for name in model_names}
+    
+    for train_index, val_index in tscv.split(X_train):
+        X_tr, X_val = X_train.iloc[train_index], X_train.iloc[val_index]
+        y_tr, y_val = y_train.iloc[train_index], y_train.iloc[val_index]
+        
+        # Fit models on the training fold without verbose output
+        fold_models = train_models(X_tr, y_tr, verbose=False)
+        
+        # Calculate RMSE on validation fold
+        for name, model in fold_models.items():
+            y_pred = model.predict(X_val)
+            rmse = np.sqrt(mean_squared_error(y_val, y_pred))
+            cv_scores[name].append(rmse)
+            
+    # Compute mean RMSE
+    mean_cv_scores = {name: np.mean(scores) for name, scores in cv_scores.items()}
+    return mean_cv_scores
 
 def save_model(model, filename, model_dir='models'):
     """
