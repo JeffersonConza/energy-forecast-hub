@@ -1,20 +1,9 @@
-FROM julia:1.10
-
-# Install system dependencies for build
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+FROM energy-forecast-hub-julia_api:latest
 
 WORKDIR /app
 
-# Copy dependency files and instantiate packages
-COPY Project.toml ./
-RUN julia --project="." -e "using Pkg; Pkg.instantiate(); Pkg.resolve(); Pkg.precompile();"
-
-# Copy source and model files
+# Copy the updated source code containing the enhancements
 COPY src/ ./src/
-COPY models/production_model_julia.jld2 ./models/
-COPY data/ ./data/
 
 EXPOSE 8002
 

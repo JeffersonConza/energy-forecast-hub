@@ -60,6 +60,12 @@ st.markdown("""
         font-size: 0.8rem;
         color: #64748b;
     }
+    
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0b0f19 0%, #1e293b 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -77,9 +83,11 @@ BACKENDS = {
 
 # 3. Request Caching decorator with short TTL (60s)
 @st.cache_data(ttl=60, show_spinner=False)
-def fetch_prediction_cached(url: str, date_str: str):
+def fetch_prediction_cached(url: str, date_str: str, overrides: dict = None):
     headers = {"Content-Type": "application/json"}
     payload = {"date": date_str}
+    if overrides:
+        payload.update(overrides)
     start = time.time()
     try:
         response = requests.post(f"{url}/predict", json=payload, timeout=5)
@@ -283,75 +291,222 @@ if generate or 'predictions_df' in st.session_state:
                     st.code("julia --project=\".\" src/api.jl", language="bash")
 
     if not df_preds.empty:
-        # Display Summary & Graphs
-        st.markdown("### 📊 Forecast Results & Comparisons")
+        # Display Tabs
+        tab1, tab2 = st.tabs(["📈 Forecast Analysis", "🧪 Scenario Sandbox"])
         
-        # Visualization: Plotly Line Chart
-        fig = go.Figure()
-        
-        # Plot one trace per backend
-        for b_lbl in active_backends:
-            b_name = BACKENDS[b_lbl]["name"]
-            b_color = BACKENDS[b_lbl]["color"]
+        with tab1:
+            st.markdown("### 📊 Forecast Results & Comparisons")
             
-            sub_df = df_preds[df_preds["Backend"] == b_name].sort_values("Date")
-            if not sub_df.empty:
-                fig.add_trace(go.Scatter(
-                    x=sub_df["Date"],
-                    y=sub_df["Consumption (kW)"],
-                    mode="lines+markers",
-                    name=f"{b_name} Forecast",
-                    line=dict(color=b_color, width=3),
-                    marker=dict(size=7),
-                    hovertemplate="<b>%{x}</b><br>Consumption: %{y:.2f} kW<br>Backend: " + b_name + "<extra></extra>"
-                ))
-        
-        fig.update_layout(
-            title="Household Daily Energy Forecast Comparison",
-            xaxis_title="Date",
-            yaxis_title="Predicted Consumption (kW)",
-            hovermode="x unified",
-            template="plotly_dark",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            margin=dict(l=40, r=40, t=80, b=40),
-            height=450
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Metrics Cards Grid
-        st.markdown("#### 📈 Analytics Summary")
-        m_cols = st.columns(len(active_backends))
-        
-        for idx, b_lbl in enumerate(active_backends):
-            b_name = BACKENDS[b_lbl]["name"]
-            b_color = BACKENDS[b_lbl]["color"]
-            sub_df = df_preds[df_preds["Backend"] == b_name]
+            # Visualization: Plotly Line Chart
+            fig = go.Figure()
             
-            if not sub_df.empty:
-                avg_val = sub_df["Consumption (kW)"].mean()
-                peak_val = sub_df["Consumption (kW)"].max()
-                avg_latency = sub_df["Latency (ms)"].mean()
+            # Plot one trace per backend
+            for b_lbl in active_backends:
+                b_name = BACKENDS[b_lbl]["name"]
+                b_color = BACKENDS[b_lbl]["color"]
                 
-                with m_cols[idx]:
-                    st.markdown(f"""
-                    <div style="border-left: 5px solid {b_color}; padding-left: 15px; background: rgba(30, 41, 59, 0.25); padding-top: 10px; padding-bottom: 10px; border-radius: 4px;">
-                        <h4 style="margin: 0; color: {b_color};">{b_name} Performance</h4>
-                        <p style="margin: 5px 0 2px 0; font-size: 0.9rem; color: #94a3b8;">Average: <b>{avg_val:.2f} kW</b></p>
-                        <p style="margin: 2px 0 2px 0; font-size: 0.9rem; color: #94a3b8;">Peak: <b>{peak_val:.2f} kW</b></p>
-                        <p style="margin: 2px 0 0 0; font-size: 0.9rem; color: #94a3b8;">Avg Latency: <b>{avg_latency:.1f} ms</b></p>
-                    </div>
-                    """, unsafe_allow_html=True)
-        
-        # Detailed Forecast Data Table
-        st.divider()
-        with st.expander("📊 View Detailed Forecast Comparison Data"):
-            pivot_df = df_preds.pivot(index="Date", columns="Backend", values="Consumption (kW)").reset_index()
-            st.dataframe(pivot_df.style.format(precision=2), use_container_width=True, hide_index=True)
+                sub_df = df_preds[df_preds["Backend"] == b_name].sort_values("Date")
+                if not sub_df.empty:
+                    fig.add_trace(go.Scatter(
+                        x=sub_df["Date"],
+                        y=sub_df["Consumption (kW)"],
+                        mode="lines+markers",
+                        name=f"{b_name} Forecast",
+                        line=dict(color=b_color, width=3),
+                        marker=dict(size=7),
+                        hovertemplate="<b>%{x}</b><br>Consumption: %{y:.2f} kW<br>Backend: " + b_name + "<extra></extra>"
+                    ))
             
-            st.markdown("**API Response Benchmarks (milliseconds)**")
-            pivot_latency = df_preds.pivot(index="Date", columns="Backend", values="Latency (ms)").reset_index()
-            st.dataframe(pivot_latency.style.format(precision=1), use_container_width=True, hide_index=True)
+            fig.update_layout(
+                title="Household Daily Energy Forecast Comparison",
+                xaxis_title="Date",
+                yaxis_title="Predicted Consumption (kW)",
+                hovermode="x unified",
+                template="plotly_dark",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                margin=dict(l=40, r=40, t=80, b=40),
+                height=450
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Metrics Cards Grid
+            st.markdown("#### 📈 Analytics Summary")
+            m_cols = st.columns(len(active_backends))
+            
+            for idx, b_lbl in enumerate(active_backends):
+                b_name = BACKENDS[b_lbl]["name"]
+                b_color = BACKENDS[b_lbl]["color"]
+                sub_df = df_preds[df_preds["Backend"] == b_name]
+                
+                if not sub_df.empty:
+                    avg_val = sub_df["Consumption (kW)"].mean()
+                    peak_val = sub_df["Consumption (kW)"].max()
+                    avg_latency = sub_df["Latency (ms)"].mean()
+                    
+                    with m_cols[idx]:
+                        st.markdown(f"""
+                        <div style="border-left: 5px solid {b_color}; padding-left: 15px; background: rgba(30, 41, 59, 0.25); padding-top: 10px; padding-bottom: 10px; border-radius: 4px;">
+                            <h4 style="margin: 0; color: {b_color};">{b_name} Performance</h4>
+                            <p style="margin: 5px 0 2px 0; font-size: 0.9rem; color: #94a3b8;">Average: <b>{avg_val:.2f} kW</b></p>
+                            <p style="margin: 2px 0 2px 0; font-size: 0.9rem; color: #94a3b8;">Peak: <b>{peak_val:.2f} kW</b></p>
+                            <p style="margin: 2px 0 0 0; font-size: 0.9rem; color: #94a3b8;">Avg Latency: <b>{avg_latency:.1f} ms</b></p>
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            # Latency Box Plot Comparison
+            st.markdown("---")
+            with st.expander("📊 Latency Distribution Analysis"):
+                fig_lat = go.Figure()
+                for b_lbl in active_backends:
+                    b_name = BACKENDS[b_lbl]["name"]
+                    b_color = BACKENDS[b_lbl]["color"]
+                    
+                    sub_df = df_preds[df_preds["Backend"] == b_name]
+                    if not sub_df.empty:
+                        fig_lat.add_trace(go.Box(
+                            y=sub_df["Latency (ms)"],
+                            name=f"{b_name} API",
+                            marker_color=b_color,
+                            boxmean=True,
+                            hovertemplate="<b>" + b_name + " API</b><br>Latency: %{y:.1f} ms<extra></extra>"
+                        ))
+                
+                fig_lat.update_layout(
+                    title="Response Latency Distribution (milliseconds)",
+                    yaxis_title="Latency (ms)",
+                    template="plotly_dark",
+                    height=300,
+                    margin=dict(l=40, r=40, t=50, b=40)
+                )
+                st.plotly_chart(fig_lat, use_container_width=True)
+            
+            # Detailed Forecast Data Table
+            with st.expander("📊 View Detailed Forecast Comparison Data"):
+                pivot_df = df_preds.pivot(index="Date", columns="Backend", values="Consumption (kW)").reset_index()
+                st.dataframe(pivot_df.style.format(precision=2), use_container_width=True, hide_index=True)
+                
+                # Export CSV button
+                csv_data = pivot_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Download Predictions Report (CSV)",
+                    data=csv_data,
+                    file_name=f"energy_forecast_report_{start_date}_to_{end_date}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
+                
+                st.markdown("**API Response Benchmarks (milliseconds)**")
+                pivot_latency = df_preds.pivot(index="Date", columns="Backend", values="Latency (ms)").reset_index()
+                st.dataframe(pivot_latency.style.format(precision=1), use_container_width=True, hide_index=True)
+
+        with tab2:
+            st.markdown("### 🧪 Scenario Sandbox Playground")
+            st.write("Override feature values dynamically for a single prediction point to analyze model sensitivity across backends.")
+            
+            # Grid layout for overrides
+            s_col1, s_col2, s_col3 = st.columns(3)
+            
+            with s_col1:
+                sb_rolling = st.slider(
+                    "Rolling 7d Mean (kW)",
+                    min_value=500.0,
+                    max_value=4000.0,
+                    value=1592.96,
+                    step=50.0,
+                    help="Historical rolling 7-day average power consumption."
+                )
+                
+            with s_col2:
+                sb_day = st.selectbox(
+                    "Day in Week",
+                    ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                    index=0,
+                    help="Forced calendar day name."
+                )
+                
+            with s_col3:
+                sb_month = st.slider(
+                    "Month of Year",
+                    min_value=1,
+                    max_value=12,
+                    value=int(start_date.month),
+                    help="Forced calendar month."
+                )
+                
+            # Sandbox execution button
+            if st.button("Run Sandbox Prediction", type="primary", use_container_width=True):
+                sandbox_date_str = start_date.strftime("%Y-%m-%d")
+                
+                # Construct the overrides payload
+                sb_semester = 1 if sb_month <= 6 else 2
+                sb_quarter = (sb_month - 1) // 3 + 1
+                
+                overrides = {
+                    "power_rolling_mean_7d": sb_rolling,
+                    "day_in_week": sb_day,
+                    "month": sb_month,
+                    "semester": sb_semester,
+                    "quarter": sb_quarter
+                }
+                
+                # Run prediction requests
+                sandbox_records = []
+                sandbox_errors = []
+                
+                with st.spinner("Running sandbox predictions..."):
+                    for b_lbl in active_backends:
+                        b_info = BACKENDS[b_lbl]
+                        res = fetch_prediction_cached(b_info["url"], sandbox_date_str, overrides)
+                        
+                        if res["success"]:
+                            sandbox_records.append({
+                                "Backend": b_info["name"],
+                                "Prediction (kW)": res["predicted_consumption_kw"],
+                                "Latency (ms)": res["latency_ms"]
+                            })
+                        else:
+                            sandbox_errors.append((b_lbl, res["error"]))
+                            
+                # Display results
+                if sandbox_errors:
+                    for b_lbl, err in sandbox_errors:
+                        st.error(f"Failed to query {b_lbl} sandbox prediction: {err}")
+                
+                if sandbox_records:
+                    st.markdown("#### Sandbox Prediction Comparison")
+                    df_sb = pd.DataFrame(sandbox_records)
+                    
+                    # Metrics card display
+                    sb_cols = st.columns(len(sandbox_records))
+                    for idx, rec in enumerate(sandbox_records):
+                        b_label = "Python (FastAPI)" if rec["Backend"] == "Python" else (
+                                  "R (Plumber)" if rec["Backend"] == "R" else "Julia (Oxygen)")
+                        b_color = BACKENDS[b_label]["color"]
+                        with sb_cols[idx]:
+                            st.metric(
+                                label=f"{rec['Backend']} Forecast",
+                                value=f"{rec['Prediction (kW)']:.2f} kW",
+                                delta=f"{rec['Latency (ms)']:.1f} ms"
+                            )
+                    
+                    # Visual comparison chart
+                    fig_sb = go.Figure()
+                    fig_sb.add_trace(go.Bar(
+                        x=df_sb["Backend"],
+                        y=df_sb["Prediction (kW)"],
+                        marker_color=[ "#0ea5e9" if b == "Python" else ("#a855f7" if b == "R" else "#f97316") for b in df_sb["Backend"] ],
+                        hovertemplate="<b>%{x}</b><br>Prediction: %{y:.2f} kW<extra></extra>"
+                    ))
+                    fig_sb.update_layout(
+                        title="What-If Scenario Energy Prediction Comparison",
+                        xaxis_title="Backend Service",
+                        yaxis_title="Predicted Energy Consumption (kW)",
+                        template="plotly_dark",
+                        height=300,
+                        margin=dict(l=40, r=40, t=50, b=40)
+                    )
+                    st.plotly_chart(fig_sb, use_container_width=True)
     else:
         st.info("No prediction data fetched. Check if any microservices are online and click 'Generate Forecast' in the sidebar.")
 else:

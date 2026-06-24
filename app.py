@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 import pandas as pd
 import joblib
 import os
@@ -24,9 +25,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. Define the expected input format
-class DateInput(BaseModel):
+# 2. Define the expected input format with optional overrides
+class PredictInput(BaseModel):
     date: str  # Example: "2023-12-25"
+    year: Optional[int] = None
+    month: Optional[int] = None
+    semester: Optional[int] = None
+    quarter: Optional[int] = None
+    day_in_week: Optional[str] = None
+    week_in_year: Optional[int] = None
+    day_in_year: Optional[int] = None
+    power_rolling_mean_7d: Optional[float] = None
 
 # 3. Load the model once at startup
 MODEL_PATH = os.path.join("models", "production_model.pkl.joblib")
@@ -46,15 +55,15 @@ def home():
     return {"status": "online", "language": "Python"}
 
 @app.post("/predict")
-def predict_energy(data: DateInput):
+def predict_energy(data: PredictInput):
     """
-    Receives a date, generates features, and returns the predicted power consumption.
+    Receives a date and optional overrides, generates features, and returns the predicted power consumption.
     """
     logger.info(f"Prediction requested for date: {data.date}")
     try:
-        # A. Create a DataFrame from the input
-        input_data = [{'date': data.date}]
-        df = pd.DataFrame(input_data)
+        # A. Create a DataFrame from the input data, excluding None fields
+        input_dict = {k: v for k, v in data.dict().items() if v is not None}
+        df = pd.DataFrame([input_dict])
         
         # B. Run Preprocessing pipeline
         df_processed = preprocess_data(df)

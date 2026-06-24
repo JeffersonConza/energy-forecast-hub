@@ -58,6 +58,26 @@ function(req, res, date = NULL) {
   # Create single-row dataframe
   input_data <- tibble(date = date)
   
+  # Add optional overrides from JSON body or request arguments
+  opt_fields <- c("year", "month", "semester", "quarter", "day_in_week", "week_in_year", "day_in_year", "power_rolling_mean_7d")
+  for (field in opt_fields) {
+    val <- req$body[[field]]
+    if (is.null(val)) {
+      val <- req$args[[field]]
+    }
+    if (!is.null(val)) {
+      if (length(val) > 1) val <- val[1]
+      
+      if (field %in% c("year", "month", "semester", "quarter", "week_in_year", "day_in_year")) {
+        input_data[[field]] <- as.integer(val)
+      } else if (field == "power_rolling_mean_7d") {
+        input_data[[field]] <- as.numeric(val)
+      } else {
+        input_data[[field]] <- as.character(val)
+      }
+    }
+  }
+  
   # Feature Engineering
   processed_data <- create_features(input_data)
   

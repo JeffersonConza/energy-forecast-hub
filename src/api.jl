@@ -104,8 +104,15 @@ end
         end
         date_str = data["date"]
         
-        # Preprocess input date
+        # Preprocess input date with optional overrides
         df = DataFrame(date = [date_str])
+        opt_fields = ["year", "month", "semester", "quarter", "day_in_week", "week_in_year", "day_in_year", "power_rolling_mean_7d"]
+        for field in opt_fields
+            if haskey(data, field)
+                df[!, Symbol(field)] = [data[field]]
+            end
+        end
+        
         df_p = Preprocessing.preprocess_data(df)
         X = get_feature_matrix(df_p)
         

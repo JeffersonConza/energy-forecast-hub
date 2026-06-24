@@ -49,19 +49,32 @@ get_rolling_mean_lookup <- function() {
 create_features <- function(df) {
   days_english <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
   
-  df <- df %>%
-    mutate(
-      date = as.Date(parse_date_time(date, orders = c("ymd", "mdy", "dmy"))),
-      
-      year = as.integer(year(date)),
-      month = as.integer(month(date)),
-      semester = as.integer(ifelse(month <= 6, 1, 2)),
-      quarter = as.integer(quarter(date)),
-      day_in_week = as.character(days_english[wday(date, week_start = 1)]),
-      week_in_year = as.integer(isoweek(date)),
-      day_in_year = as.integer(yday(date))
-    ) %>%
-    filter(!is.na(date))
+  # Parse date first
+  df$date <- as.Date(parse_date_time(df$date, orders = c("ymd", "mdy", "dmy")))
+  df <- df %>% filter(!is.na(date))
+  
+  # Add other features if they are not already in df
+  if (!"year" %in% colnames(df)) {
+    df$year <- as.integer(year(df$date))
+  }
+  if (!"month" %in% colnames(df)) {
+    df$month <- as.integer(month(df$date))
+  }
+  if (!"semester" %in% colnames(df)) {
+    df$semester <- as.integer(ifelse(df$month <= 6, 1, 2))
+  }
+  if (!"quarter" %in% colnames(df)) {
+    df$quarter <- as.integer(quarter(df$date))
+  }
+  if (!"day_in_week" %in% colnames(df)) {
+    df$day_in_week <- as.character(days_english[wday(df$date, week_start = 1)])
+  }
+  if (!"week_in_year" %in% colnames(df)) {
+    df$week_in_year <- as.integer(isoweek(df$date))
+  }
+  if (!"day_in_year" %in% colnames(df)) {
+    df$day_in_year <- as.integer(yday(df$date))
+  }
   
   if (!"power_rolling_mean_7d" %in% colnames(df)) {
     lookup <- get_rolling_mean_lookup()
