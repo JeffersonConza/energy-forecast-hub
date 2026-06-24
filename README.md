@@ -148,6 +148,37 @@ python -m poetry run streamlit run dashboard.py
 
 ---
 
+## 🐳 Docker Orchestration Quick Start
+
+To run the entire multi-language stack (APIs + Streamlit Dashboard) inside containerized isolation:
+
+### 1. Build and Launch the Stack
+Make sure you have Docker and the Docker Desktop daemon running. Then build and launch the containers:
+```bash
+# Build and run container services in the background
+docker-compose up --build -d
+```
+This command orchestrates:
+* `energy_python_api` on port `8000` (FastAPI)
+* `energy_r_api` on port `8001` (Plumber)
+* `energy_julia_api` on port `8002` (Oxygen.jl)
+* `energy_dashboard` on port `8501` (Streamlit)
+
+### 2. Verify Execution
+Check that all 4 container microservices are up and healthy:
+```bash
+docker ps
+```
+Or view consolidated running logs:
+```bash
+docker-compose logs -f
+```
+
+### 3. Access Live Dashboard
+Open your web browser and navigate to [http://localhost:8501](http://localhost:8501) to compare model forecasts and execution times side-by-side.
+
+---
+
 ## 🔌 REST API Specifications
 
 ### Health Check
