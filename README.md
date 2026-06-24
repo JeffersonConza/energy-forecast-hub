@@ -1,6 +1,6 @@
 # ⚡ Energy Forecast Hub
 
-![Demo Screenshot](demo_screenshot.png)
+![Demo](demo.webm)
 
 A high-performance multi-language machine learning application designed to predict household daily energy consumption. The system implements identical feature engineering pipelines and trains **Random Forest** regression models across three separate language runtimes (**Python**, **R**, and **Julia**), served via independent REST microservices, and unified under a single performance-profiling **Streamlit** dashboard.
 
