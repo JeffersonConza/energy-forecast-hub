@@ -1,5 +1,20 @@
 # ⚡ Energy Forecast Hub
 
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![R](https://img.shields.io/badge/R-4.4.0-276DC3?style=for-the-badge&logo=r&logoColor=white)
+![Plumber](https://img.shields.io/badge/Plumber%20API-R%20Service-blue?style=for-the-badge)
+![Julia](https://img.shields.io/badge/Julia-1.10-9558B2?style=for-the-badge&logo=julia&logoColor=white)
+![Oxygen.jl](https://img.shields.io/badge/Oxygen.jl-Julia%20Service-orange?style=for-the-badge)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/Docker_Compose-111111?style=for-the-badge&logo=docker&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)
+![XGBoost](https://img.shields.io/badge/XGBoost-111111?style=for-the-badge)
+![Poetry](https://img.shields.io/badge/Poetry-60A5FA?style=for-the-badge&logo=poetry&logoColor=white)
+![UCI Dataset](https://img.shields.io/badge/Dataset-UCI%20MLR-red?style=for-the-badge)
+![License MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+
 ![Demo](demo.gif)
 
 A high-performance multi-language machine learning application designed to predict household daily energy consumption. The system implements identical feature engineering pipelines and trains **Random Forest** regression models across three separate language runtimes (**Python**, **R**, and **Julia**), served via independent REST microservices, and unified under a single performance-profiling **Streamlit** dashboard.
@@ -212,4 +227,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"date": "2026-06-23"}' htt
 ---
 
 ## Author
+**Jefferson Conza**  
+*Mathematics Student | ML Engineer*  
+
 * **GitHub:** [@JeffersonConza](https://github.com/JeffersonConza)
